@@ -1,0 +1,39 @@
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    depends_on: 
+      - postgres
+    environment:
+      - DATABASE_URL=postgres://user:password@postgres:5432/password_manager?sslmode=disable
+    restart: unless-stopped
+    networks:
+      - app-network
+
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=password_manager
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+    networks:
+      - app-network
+
+
+volumes:
+  postgres_data:
+
+networks:
+  app-network:
+    driver: bridge
