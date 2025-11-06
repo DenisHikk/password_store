@@ -15,7 +15,7 @@ func NewHTTPServer(pool *pgxpool.Pool) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	userRepo := userRepository.NewUserRepository(pool)
-	userService := userService.NewUserService(*userRepo)
+	userService := userService.NewUserService(userRepo)
 	authHandler := authUser.NewAuthHandler(userService)
 
 	// handler password

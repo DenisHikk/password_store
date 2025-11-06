@@ -2,6 +2,8 @@ package user
 
 import (
 	"context"
+	"database/sql"
+	"genpasstore/internal/user/model"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -23,4 +25,24 @@ func (repo *UserRepository) ExistsByEmail(ctx context.Context, email string) (bo
 func (repo *UserRepository) CreateUser(ctx context.Context, email, passwordHash, masterHash string) error {
 	_, err := repo.db.Exec(ctx, `INSERT INTO users (email, password_hash, master_hash) VALUES ($1, $2, $3)`, email, passwordHash, masterHash)
 	return err
+}
+
+func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (model.UserDTO, error) {
+	var user model.UserDTO
+	rows, err := repo.db.Query(ctx, "SELECT * FROM users WHERE email = $1", email)
+	if err != nil {
+		return model.UserDTO{}, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(&user.ID, &user.Email, &user.Password, &user.MasterPassword, &user.DateCreate)
+		if err != nil {
+			return model.UserDTO{}, err
+		}
+	} else {
+		return model.UserDTO{}, sql.ErrNoRows
+	}
+
+	return user, nil
 }

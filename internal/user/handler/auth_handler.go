@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"genpasstore/internal/user/model"
+	"log"
 	"net/http"
 )
 
@@ -42,7 +43,17 @@ func (handler *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) 
 	var req model.UserRequestsLogin
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad json", http.StatusBadRequest)
+		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	check, err := handler.service.Login(r.Context(), req)
+	if err != nil {
+		log.Println(err)
+		http.Error(w, "Not found", http.StatusNotFound)
+	}
+
+	if check {
+		w.WriteHeader(http.StatusOK)
+	}
+	w.WriteHeader(http.StatusUnauthorized)
 }

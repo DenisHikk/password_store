@@ -5,14 +5,14 @@ import (
 	"errors"
 	password "genpasstore/internal/password/service"
 	"genpasstore/internal/user/model"
-	userRepo "genpasstore/internal/user/repository"
+	"log"
 )
 
 type UserService struct {
-	repo userRepo.UserRepository
+	repo Repository
 }
 
-func NewUserService(repo userRepo.UserRepository) *UserService {
+func NewUserService(repo Repository) *UserService {
 	return &UserService{repo: repo}
 }
 
@@ -37,9 +37,20 @@ func (service *UserService) Register(ctx context.Context, user model.UserRequest
 	return nil
 }
 
-func (service *UserService) Login(ctx context.Context, user model.UserRequestsLogin) error {
-	if exists, _ := service.repo.ExistsByEmail(ctx, user.Email); !exists {
-		return errors.New("no user with this email was found")
+func (service *UserService) Login(ctx context.Context, userReq model.UserRequestsLogin) (bool, error) {
+	if exists, _ := service.repo.ExistsByEmail(ctx, userReq.Email); !exists {
+		return false, errors.New("no user with this email was found")
 	}
-	return nil
+	user, err := service.repo.GetUserByEmail(ctx, userReq.Email)
+	if err != nil {
+		log.Println("Error while request user from DB")
+		return false, err
+	}
+
+	check, err := password.VerifyHashPassword(user.Password, userReq.Password)
+	if err != nil {
+		return false, err
+	}
+
+	return check, nil
 }
