@@ -40,6 +40,10 @@ func GeneratePassword(cfg PasswordConfig) (string, error) {
 		pools += symbol
 	}
 
+	if pools == "" {
+		return "", errors.New("no character classes selected")
+	}
+
 	out := make([]byte, cfg.Length)
 	for i := range out {
 		ch, err := pick(pools)

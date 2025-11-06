@@ -19,7 +19,7 @@ type ConfigDB struct {
 	MaxConns          int32
 	MinConns          int32
 	MaxConnLifetime   time.Duration
-	MaxConndIdleTime  time.Duration
+	MaxConnIdleTime   time.Duration
 	HealthCheckPeriod time.Duration
 	ConnectionTimeout time.Duration
 }
@@ -52,10 +52,10 @@ func NewPool(ctx context.Context, config ConfigDB) (*pgxpool.Pool, error) {
 	} else {
 		cfg.MaxConnLifetime = config.MaxConnLifetime
 	}
-	if config.MaxConndIdleTime == 0 {
+	if config.MaxConnIdleTime == 0 {
 		cfg.MaxConnIdleTime = 30 * time.Minute
 	} else {
-		cfg.MaxConnIdleTime = config.MaxConndIdleTime
+		cfg.MaxConnIdleTime = config.MaxConnIdleTime
 	}
 	if config.HealthCheckPeriod == 0 {
 		cfg.HealthCheckPeriod = time.Minute
