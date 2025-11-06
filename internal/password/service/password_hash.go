@@ -30,19 +30,11 @@ func EncodeHashPassword(password string) (string, error) {
 	bSalt := base64.RawStdEncoding.EncodeToString(salt)
 	bHash := base64.RawStdEncoding.EncodeToString(derived)
 
-	//"$argon2i$v=19$m=16,t=2,p=1$MTIzMTIzMTIz$gOKio+D/siwKq8z8+/Y2EQ"
+	//example output string "$argon2i$v=19$m=16,t=2,p=1$MTIzMTIzMTIz$gOKio+D/siwKq8z8+/Y2EQ"
 	argon2string := fmt.Sprintf(
 		"$argon2id$v=19$m=%d,t=%d,p=%d$%s$%s",
 		memKiB, timeParam, threads, bSalt, bHash,
 	)
 
 	return argon2string, nil
-}
-
-func CheckHashPassword() {
-
-}
-
-func VerifyHashPassword(hashPassword string) {
-
 }
