@@ -70,6 +70,20 @@ Important Notice
 > Do not use it to store or process real user data, passwords, or any sensitive information.
 > The authors are not responsible for any misuse or data loss.
 
+## Build Postgresql separately
+
+```bash
+docker run -d \
+  --name my-postgres \
+  -e POSTGRES_USER=admin \
+  -e POSTGRES_PASSWORD=secret \
+  -e POSTGRES_DB=mydb \
+  -v pgdata:/var/lib/postgresql/data \
+  -p 5432:5432 \
+  postgres:15
+```
+
+
 ## License
 
 MIT License — for educational and research purposes only.

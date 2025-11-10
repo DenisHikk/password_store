@@ -1,20 +1,18 @@
 package model
 
-import "time"
+import (
+	"time"
 
-type UserRequestRegistry struct {
-	Email          string `json:"email"`
-	Password       string `json:"password"`
-	MasterPassword string `json:"master_password"`
-}
+	"github.com/google/uuid"
+)
 
-type UserRequestsLogin struct {
+type UserRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type UserDTO struct {
-	ID             int32
+	ID             uuid.UUID
 	Email          string
 	Password       string
 	MasterPassword string

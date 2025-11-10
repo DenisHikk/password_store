@@ -6,6 +6,6 @@ import (
 )
 
 type AuthService interface {
-	Register(ctx context.Context, user model.UserRequestRegistry) error
-	Login(ctx context.Context, user model.UserRequestsLogin) (bool, error)
+	Register(ctx context.Context, user model.UserRequest) error
+	Login(ctx context.Context, user model.UserRequest) (bool, error)
 }

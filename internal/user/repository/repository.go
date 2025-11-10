@@ -22,8 +22,8 @@ func (repo *UserRepository) ExistsByEmail(ctx context.Context, email string) (bo
 	return exists, err
 }
 
-func (repo *UserRepository) CreateUser(ctx context.Context, email, passwordHash, masterHash string) error {
-	_, err := repo.db.Exec(ctx, `INSERT INTO users (email, password_hash, master_hash) VALUES ($1, $2, $3)`, email, passwordHash, masterHash)
+func (repo *UserRepository) CreateUser(ctx context.Context, email, passwordHash string) error {
+	_, err := repo.db.Exec(ctx, `INSERT INTO users (email, password_hash) VALUES ($1, $2)`, email, passwordHash)
 	return err
 }
 
@@ -36,7 +36,7 @@ func (repo *UserRepository) GetUserByEmail(ctx context.Context, email string) (m
 	defer rows.Close()
 
 	if rows.Next() {
-		err := rows.Scan(&user.ID, &user.Email, &user.Password, &user.MasterPassword, &user.DateCreate)
+		err := rows.Scan(&user.ID, &user.Email, &user.Password)
 		if err != nil {
 			return model.UserDTO{}, err
 		}

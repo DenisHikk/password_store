@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
+
+	_ "net/http/pprof"
 )
 
 func loadConfigDB() (db.ConfigDB, error) {
@@ -42,29 +44,38 @@ func main() {
 }
 
 func realMain() error {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	log.Println("Load dotenv")
 	err := godotenv.Load()
 	if err != nil {
 		return err
 	}
 
+	log.Println("Load config for DB")
 	configDB, err := loadConfigDB()
 	if err != nil {
 		return err
 	}
+
+	log.Println("Create pool for DB")
 	pool, err := db.NewPool(ctx, configDB)
 	if err != nil {
 		return err
 	}
 	defer pool.Close()
 
+	log.Println("Starting server...")
 	srv := server.NewHTTPServer(pool)
 
-	log.Printf("Server start and listen in {}:8000")
-	err = http.ListenAndServe(":8000", srv)
+	log.Printf("Server start and listen in 0.0.0.0:8000")
+	err = http.ListenAndServe("0.0.0.0:8000", srv)
 	if err != nil {
 		return err
 	}
+	log.Println("There's can i be?")
 	return nil
 }

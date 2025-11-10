@@ -16,7 +16,7 @@ func NewUserService(repo Repository) *UserService {
 	return &UserService{repo: repo}
 }
 
-func (service *UserService) Register(ctx context.Context, user model.UserRequestRegistry) error {
+func (service *UserService) Register(ctx context.Context, user model.UserRequest) error {
 	if exists, _ := service.repo.ExistsByEmail(ctx, user.Email); exists {
 		return errors.New("email already exists")
 	}
@@ -24,12 +24,8 @@ func (service *UserService) Register(ctx context.Context, user model.UserRequest
 	if err != nil {
 		return err
 	}
-	hashMasterPassword, err := password.EncodeHashPassword(user.MasterPassword)
-	if err != nil {
-		return err
-	}
 
-	err = service.repo.CreateUser(ctx, user.Email, hashPassword, hashMasterPassword)
+	err = service.repo.CreateUser(ctx, user.Email, hashPassword)
 	if err != nil {
 		return err
 	}
@@ -37,7 +33,7 @@ func (service *UserService) Register(ctx context.Context, user model.UserRequest
 	return nil
 }
 
-func (service *UserService) Login(ctx context.Context, userReq model.UserRequestsLogin) (bool, error) {
+func (service *UserService) Login(ctx context.Context, userReq model.UserRequest) (bool, error) {
 	if exists, _ := service.repo.ExistsByEmail(ctx, userReq.Email); !exists {
 		return false, errors.New("no user with this email was found")
 	}

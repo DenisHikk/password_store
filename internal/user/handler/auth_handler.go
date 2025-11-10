@@ -20,8 +20,7 @@ func (handler *AuthHandler) HandleRegistry(w http.ResponseWriter, r *http.Reques
 		http.Error(w, "Method no allowed", http.StatusMethodNotAllowed)
 		return
 	}
-
-	var req model.UserRequestRegistry
+	var req model.UserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad json", http.StatusBadRequest)
 	}
@@ -40,7 +39,7 @@ func (handler *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	var req model.UserRequestsLogin
+	var req model.UserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Bad json", http.StatusBadRequest)
 		return
@@ -50,10 +49,12 @@ func (handler *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Not found", http.StatusNotFound)
+		return
 	}
 
-	if check {
-		w.WriteHeader(http.StatusOK)
+	if !check {
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	}
-	w.WriteHeader(http.StatusUnauthorized)
+	w.WriteHeader(http.StatusOK)
 }
