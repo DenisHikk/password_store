@@ -44,9 +44,6 @@ func main() {
 }
 
 func realMain() error {
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	log.Println("Load dotenv")
