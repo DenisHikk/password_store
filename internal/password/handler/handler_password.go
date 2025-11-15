@@ -21,6 +21,10 @@ type PasswordResponse struct {
 func HandleGeneratePassword(w http.ResponseWriter, r *http.Request) {
 	var req PasswordRequest
 
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
+
 	cfg := password.PasswordConfig{
 		UseLower:  req.UseLower,
 		UseUpper:  req.UseUpper,
@@ -31,7 +35,7 @@ func HandleGeneratePassword(w http.ResponseWriter, r *http.Request) {
 
 	pw, err := password.GeneratePassword(cfg)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
