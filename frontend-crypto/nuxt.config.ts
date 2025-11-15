@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devServer: {
     host: "0.0.0.0",
-    port: 6543
+    port: 8000
   },
   devtools: { enabled: true },
   modules: ['@nuxt/ui', '@nuxt/eslint', '@pinia/nuxt'],

@@ -18,7 +18,7 @@ const form = reactive({
                 size="xl" class="w-full mt-6" autocomplete="current-password" variant="subtle">
                 <template #trailing>
                     <UButton variant="ghost" color="info"
-                        :trailing-icon="show ? 'i-heroicons-eye-slash-20-solid' : 'i-heroicons-eye-20-solid'"
+                        :trailing-icon="show ?  'i-heroicons-eye-20-solid' : 'i-heroicons-eye-slash-20-solid'"
                         @click="show = !show" />
                 </template>
             </UInput>
