@@ -1,0 +1,1432 @@
+openapi: 3.0.3
+info:
+  title: Password Manager API
+  version: 1.0.0
+  description: >
+    Безопасный password manager с шифрованием секретов, JWT-аутентификацией и REST API.
+
+servers:
+  - url: https://api.example.com
+    description: Production
+  - url: http://localhost:8000
+    description: Local
+
+tags:
+  - name: Auth
+    description: Регистрация и аутентификация
+  - name: PasswordSecrets
+    description: CRUD для секретов типа "пароль к сервису"
+  - name: SshSecrets
+    description: CRUD для SSH-секретов
+  - name: NoteSecrets
+    description: CRUD для текстовых заметок
+  - name: Utils
+    description: Утилиты (генерация пароля)
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    LimitParam:
+      name: limit
+      in: query
+      description: Максимальное количество элементов
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 50
+    OffsetParam:
+      name: offset
+      in: query
+      description: Смещение для пагинации
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    TagParam:
+      name: tag
+      in: query
+      description: Фильтр по тегу
+      schema:
+        type: string
+    FavoriteParam:
+      name: favorite
+      in: query
+      description: Фильтр по избранным
+      schema:
+        type: boolean
+    IncludePasswordParam:
+      name: include_password
+      in: query
+      description: Включить ли поле password в ответ
+      schema:
+        type: boolean
+        default: false
+    IncludePrivateKeyParam:
+      name: include_private_key
+      in: query
+      description: Включить ли приватный ключ в ответ
+      schema:
+        type: boolean
+        default: false
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+          required: [code, message]
+      required: [error]
+
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required: [total, limit, offset]
+
+    UserPublic:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        created_at:
+          type: string
+          format: date-time
+      required: [id, email, created_at]
+
+    AuthRegisterRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required: [email, password]
+
+    AuthLoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required: [email, password]
+
+    TokenPairResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+          example: Bearer
+        expires_in:
+          type: integer
+          description: Время жизни access token в секундах
+        refresh_token:
+          type: string
+      required: [access_token, token_type, expires_in, refresh_token]
+
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required: [refresh_token]
+
+    TokenLogoutRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required: [refresh_token]
+
+    ChangePasswordRequest:
+      type: object
+      properties:
+        old_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+        new_password_confirm:
+          type: string
+          format: password
+      required: [old_password, new_password, new_password_confirm]
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required: [message]
+
+    # Common
+    TagList:
+      type: array
+      items:
+        type: string
+
+    # Password Secrets
+    PasswordSecretBase:
+      type: object
+      properties:
+        service_name:
+          type: string
+        login:
+          type: string
+        password:
+          type: string
+          description: "Пароль в открытом виде (только при создании/обновлении/спец. запросе)"
+        url:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        tags:
+          $ref: "#/components/schemas/TagList"
+        is_favorite:
+          type: boolean
+          default: false
+
+    PasswordSecretCreateRequest:
+      allOf:
+        - $ref: "#/components/schemas/PasswordSecretBase"
+      required:
+        - service_name
+        - login
+        - password
+
+    PasswordSecretUpdateRequest:
+      type: object
+      properties:
+        service_name:
+          type: string
+        login:
+          type: string
+        password:
+          type: string
+        url:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        tags:
+          $ref: "#/components/schemas/TagList"
+        is_favorite:
+          type: boolean
+
+    PasswordSecretFavoriteRequest:
+      type: object
+      properties:
+        is_favorite:
+          type: boolean
+      required: [is_favorite]
+
+    PasswordSecretResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        service_name:
+          type: string
+        login:
+          type: string
+        password:
+          type: string
+          nullable: true
+        url:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        tags:
+          $ref: "#/components/schemas/TagList"
+        is_favorite:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - service_name
+        - login
+        - tags
+        - is_favorite
+        - created_at
+        - updated_at
+
+    PasswordSecretListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PasswordSecretResponse"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required: [items, total, limit, offset]
+
+    # SSH Secrets
+    SshSecretBase:
+      type: object
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+          default: 22
+        username:
+          type: string
+        private_key:
+          type: string
+          description: "Приватный ключ"
+        passphrase:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        tags:
+          $ref: "#/components/schemas/TagList"
+        is_favorite:
+          type: boolean
+          default: false
+
+    SshSecretCreateRequest:
+      allOf:
+        - $ref: "#/components/schemas/SshSecretBase"
+      required:
+        - host
+        - username
+        - private_key
+
+    SshSecretUpdateRequest:
+      type: object
+      properties:
+        host:
+          type: string
+        port:
+          type: integer
+        username:
+          type: string
+        private_key:
+          type: string
+        passphrase:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        tags:
+          $ref: "#/components/schemas/TagList"
+        is_favorite:
+          type: boolean
+
+    SshSecretFavoriteRequest:
+      type: object
+      properties:
+        is_favorite:
+          type: boolean
+      required: [is_favorite]
+
+    SshSecretResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        host:
+          type: string
+        port:
+          type: integer
+        username:
+          type: string
+        private_key:
+          type: string
+          nullable: true
+        passphrase:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        tags:
+          $ref: "#/components/schemas/TagList"
+        is_favorite:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - host
+        - port
+        - username
+        - tags
+        - is_favorite
+        - created_at
+        - updated_at
+
+    SshSecretListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/SshSecretResponse"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required: [items, total, limit, offset]
+
+    # Note Secrets
+    NoteSecretBase:
+      type: object
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        tags:
+          $ref: "#/components/schemas/TagList"
+        is_favorite:
+          type: boolean
+          default: false
+
+    NoteSecretCreateRequest:
+      allOf:
+        - $ref: "#/components/schemas/NoteSecretBase"
+      required:
+        - title
+        - body
+
+    NoteSecretUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        body:
+          type: string
+        tags:
+          $ref: "#/components/schemas/TagList"
+        is_favorite:
+          type: boolean
+
+    NoteSecretFavoriteRequest:
+      type: object
+      properties:
+        is_favorite:
+          type: boolean
+      required: [is_favorite]
+
+    NoteSecretResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        body:
+          type: string
+        tags:
+          $ref: "#/components/schemas/TagList"
+        is_favorite:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - body
+        - tags
+        - is_favorite
+        - created_at
+        - updated_at
+
+    NoteSecretListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/NoteSecretResponse"
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+      required: [items, total, limit, offset]
+
+    # Password Generator
+    PasswordGeneratorRequest:
+      type: object
+      properties:
+        length:
+          type: integer
+          minimum: 8
+          maximum: 128
+          default: 16
+        use_lowercase:
+          type: boolean
+          default: true
+        use_uppercase:
+          type: boolean
+          default: true
+        use_digits:
+          type: boolean
+          default: true
+        use_symbols:
+          type: boolean
+          default: true
+        exclude_ambiguous:
+          type: boolean
+          default: false
+      required: [length]
+
+    PasswordGeneratorResponse:
+      type: object
+      properties:
+        password:
+          type: string
+      required: [password]
+
+security:
+  - bearerAuth: []
+
+paths:
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Регистрация пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthRegisterRequest"
+      responses:
+        "201":
+          description: Пользователь зарегистрирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "400":
+          description: Ошибка в данных (например, пароли не совпадают)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Пользователь уже существует
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Вход пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthLoginRequest"
+      responses:
+        "200":
+          description: Успешный вход
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenPairResponse"
+        "401":
+          description: Неверные учетные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "423":
+          description: Аккаунт временно заблокирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Обновление access token по refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRefreshRequest"
+      responses:
+        "200":
+          description: Новый access token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    example: Bearer
+                  expires_in:
+                    type: integer
+                required: [access_token, token_type, expires_in]
+        "401":
+          description: Невалидный или истекший refresh token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Выход (инвалидация refresh token)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenLogoutRequest"
+      responses:
+        "204":
+          description: Успешный выход, без содержимого
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Смена пароля
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: Пароль успешно изменён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Ошибка (пароли не совпадают / слабый пароль)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Неверный старый пароль или неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/auth/me:
+    get:
+      tags: [Auth]
+      summary: Данные текущего пользователя
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Профиль пользователя
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserPublic"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/secrets/passwords:
+    get:
+      tags: [PasswordSecrets]
+      summary: Список секретов-паролей
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+        - $ref: "#/components/parameters/TagParam"
+        - $ref: "#/components/parameters/FavoriteParam"
+      responses:
+        "200":
+          description: Список секретов-паролей
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordSecretListResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [PasswordSecrets]
+      summary: Создать секрет-пароль
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordSecretCreateRequest"
+      responses:
+        "201":
+          description: Секрет создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordSecretResponse"
+        "400":
+          description: Неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/secrets/passwords/{id}:
+    get:
+      tags: [PasswordSecrets]
+      summary: Получить секрет-пароль по ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IncludePasswordParam"
+      responses:
+        "200":
+          description: Секрет-пароль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [PasswordSecrets]
+      summary: Полное обновление секрета-пароля
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordSecretCreateRequest"
+      responses:
+        "200":
+          description: Обновлённый секрет-пароль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [PasswordSecrets]
+      summary: Частичное обновление секрета-пароля
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordSecretUpdateRequest"
+      responses:
+        "200":
+          description: Обновлённый секрет-пароль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [PasswordSecrets]
+      summary: Удалить секрет-пароль
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Удалено
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/secrets/passwords/{id}/favorite:
+    patch:
+      tags: [PasswordSecrets]
+      summary: Пометить секрет-пароль как избранный/обычный
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordSecretFavoriteRequest"
+      responses:
+        "200":
+          description: Обновлённый секрет-пароль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/secrets/ssh:
+    get:
+      tags: [SshSecrets]
+      summary: Список SSH-секретов
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+        - $ref: "#/components/parameters/TagParam"
+        - $ref: "#/components/parameters/FavoriteParam"
+      responses:
+        "200":
+          description: Список SSH-секретов
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SshSecretListResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [SshSecrets]
+      summary: Создать SSH-секрет
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SshSecretCreateRequest"
+      responses:
+        "201":
+          description: SSH-секрет создан
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SshSecretResponse"
+        "400":
+          description: Неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/secrets/ssh/{id}:
+    get:
+      tags: [SshSecrets]
+      summary: Получить SSH-секрет по ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: "#/components/parameters/IncludePrivateKeyParam"
+      responses:
+        "200":
+          description: SSH-секрет
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SshSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [SshSecrets]
+      summary: Полное обновление SSH-секрета
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SshSecretCreateRequest"
+      responses:
+        "200":
+          description: Обновлённый SSH-секрет
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SshSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [SshSecrets]
+      summary: Частичное обновление SSH-секрета
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SshSecretUpdateRequest"
+      responses:
+        "200":
+          description: Обновлённый SSH-секрет
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SshSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [SshSecrets]
+      summary: Удалить SSH-секрет
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Удалено
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/secrets/ssh/{id}/favorite:
+    patch:
+      tags: [SshSecrets]
+      summary: Пометить SSH-секрет как избранный/обычный
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SshSecretFavoriteRequest"
+      responses:
+        "200":
+          description: Обновлённый SSH-секрет
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SshSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найден
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/secrets/notes:
+    get:
+      tags: [NoteSecrets]
+      summary: Список заметок
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/OffsetParam"
+        - $ref: "#/components/parameters/TagParam"
+        - $ref: "#/components/parameters/FavoriteParam"
+      responses:
+        "200":
+          description: Список заметок
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteSecretListResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      tags: [NoteSecrets]
+      summary: Создать заметку
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteSecretCreateRequest"
+      responses:
+        "201":
+          description: Заметка создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteSecretResponse"
+        "400":
+          description: Неверные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/secrets/notes/{id}:
+    get:
+      tags: [NoteSecrets]
+      summary: Получить заметку по ID
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Заметка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    put:
+      tags: [NoteSecrets]
+      summary: Полное обновление заметки
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteSecretCreateRequest"
+      responses:
+        "200":
+          description: Обновлённая заметка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      tags: [NoteSecrets]
+      summary: Частичное обновление заметки
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteSecretUpdateRequest"
+      responses:
+        "200":
+          description: Обновлённая заметка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      tags: [NoteSecrets]
+      summary: Удалить заметку
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Удалено
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/secrets/notes/{id}/favorite:
+    patch:
+      tags: [NoteSecrets]
+      summary: Пометить заметку как избранную/обычную
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NoteSecretFavoriteRequest"
+      responses:
+        "200":
+          description: Обновлённая заметка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NoteSecretResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Не найдена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/v1/utils/password-generator:
+    post:
+      tags: [Utils]
+      summary: Генерация случайного пароля
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordGeneratorRequest"
+      responses:
+        "200":
+          description: Сгенерированный пароль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PasswordGeneratorResponse"
+        "400":
+          description: Неверные параметры (например, длина вне диапазона)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Неавторизован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"

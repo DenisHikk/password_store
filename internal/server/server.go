@@ -24,7 +24,7 @@ func NewHTTPServer(pool *pgxpool.Pool) *http.ServeMux {
 	mux.HandleFunc("/user/registry", authHandler.HandleRegistry)
 	mux.HandleFunc("/user/login", authHandler.HandleLogin)
 
-	mux.HandleFunc("/ping", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("pong")) })
+	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("{\"status\": \"ok\"}")) })
 
 	log.Println("Done registry handler")
 	return mux
