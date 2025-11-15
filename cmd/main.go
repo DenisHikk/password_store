@@ -4,6 +4,9 @@ import (
 	"context"
 	"genpasstore/internal/db"
 	"genpasstore/internal/server"
+	authUser "genpasstore/internal/user/handler"
+	userRepository "genpasstore/internal/user/repository"
+	userService "genpasstore/internal/user/service"
 	"log"
 	"net/http"
 	"os"
@@ -65,8 +68,14 @@ func realMain() error {
 	}
 	defer pool.Close()
 
+	userRepo := userRepository.NewUserRepository(pool)
+	userService := userService.NewUserService(userRepo)
+	authHandler := authUser.NewAuthHandler(userService)
+
 	log.Println("Starting server...")
-	srv := server.NewHTTPServer(pool)
+	srv := server.NewHTTPServer(server.Deps{
+		AuthHandler: authHandler,
+	})
 
 	log.Printf("Server start and listen in 0.0.0.0:8000")
 	err = http.ListenAndServe("0.0.0.0:8000", srv)

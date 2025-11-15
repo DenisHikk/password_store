@@ -19,16 +19,7 @@ type PasswordResponse struct {
 }
 
 func HandleGeneratePassword(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method no allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req PasswordRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Bad json", http.StatusBadRequest)
-		return
-	}
 
 	cfg := password.PasswordConfig{
 		UseLower:  req.UseLower,

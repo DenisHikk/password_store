@@ -3,29 +3,35 @@ package server
 import (
 	password "genpasstore/internal/password/handler"
 	authUser "genpasstore/internal/user/handler"
-	userRepository "genpasstore/internal/user/repository"
-	userService "genpasstore/internal/user/service"
 	"log"
 	"net/http"
 
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
-func NewHTTPServer(pool *pgxpool.Pool) *http.ServeMux {
-	mux := http.NewServeMux()
+type Deps struct {
+	AuthHandler *authUser.AuthHandler
+}
 
-	userRepo := userRepository.NewUserRepository(pool)
-	userService := userService.NewUserService(userRepo)
-	authHandler := authUser.NewAuthHandler(userService)
+func NewHTTPServer(deps Deps) *chi.Mux {
+	r := chi.NewRouter()
 
-	// handler password
-	mux.HandleFunc("/password/generate", password.HandleGeneratePassword)
-	// handler user
-	mux.HandleFunc("/user/registry", authHandler.HandleRegistry)
-	mux.HandleFunc("/user/login", authHandler.HandleLogin)
+	r.Use(middleware.Logger)
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("{\"status\": \"ok\"}"))
+	})
 
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) { w.Write([]byte("{\"status\": \"ok\"}")) })
+	r.Route("/api/v1", func(r chi.Router) {
+		r.Route("/password", func(r chi.Router) {
+			r.Post("/generate", password.HandleGeneratePassword)
+		})
+		r.Route("/auth", func(r chi.Router) {
+			r.Post("/registry", deps.AuthHandler.HandleRegistry)
+			r.Post("/login", deps.AuthHandler.HandleLogin)
+		})
+	})
 
 	log.Println("Done registry handler")
-	return mux
+	return r
 }

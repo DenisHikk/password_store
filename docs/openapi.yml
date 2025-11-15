@@ -516,7 +516,7 @@ components:
         length:
           type: integer
           minimum: 8
-          maximum: 128
+          maximum: 1024
           default: 16
         use_lowercase:
           type: boolean
@@ -530,9 +530,6 @@ components:
         use_symbols:
           type: boolean
           default: true
-        exclude_ambiguous:
-          type: boolean
-          default: false
       required: [length]
 
     PasswordGeneratorResponse:
