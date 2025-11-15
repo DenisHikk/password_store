@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"genpasstore/internal/db"
-	"genpasstore/internal/server"
+	"genpasstore/internal/httpx/server"
 	authUser "genpasstore/internal/user/handler"
 	userRepository "genpasstore/internal/user/repository"
 	userService "genpasstore/internal/user/service"
@@ -47,8 +47,7 @@ func main() {
 }
 
 func realMain() error {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx := context.Background()
 	log.Println("Load dotenv")
 	err := godotenv.Load()
 	if err != nil {
@@ -82,6 +81,5 @@ func realMain() error {
 	if err != nil {
 		return err
 	}
-	log.Println("There's can i be?")
 	return nil
 }

@@ -45,7 +45,7 @@ func (service *UserService) Login(ctx context.Context, userReq model.UserRequest
 
 	check, err := password.VerifyHashPassword(user.Password, userReq.Password)
 	if err != nil {
-		return false, err
+		return false, errors.New("Wrong")
 	}
 
 	return check, nil

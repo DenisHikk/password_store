@@ -2,8 +2,8 @@ package auth
 
 import (
 	"encoding/json"
+	httpx "genpasstore/internal/httpx/handler"
 	"genpasstore/internal/user/model"
-	"log"
 	"net/http"
 )
 
@@ -16,44 +16,46 @@ func NewAuthHandler(service AuthService) *AuthHandler {
 }
 
 func (handler *AuthHandler) HandleRegistry(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method no allowed", http.StatusMethodNotAllowed)
-		return
-	}
 	var req model.UserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Bad json", http.StatusBadRequest)
+		httpx.WriteError(w, http.StatusBadRequest, "Invalid JSON", httpx.ErrorDetails{
+			"err": err.Error(),
+		})
+		return
 	}
 
 	err := handler.service.Register(r.Context(), req)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		httpx.WriteError(w, http.StatusBadRequest, "Error register", httpx.ErrorDetails{
+			"err": err.Error(),
+		})
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
 }
 
 func (handler *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method now allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	var req model.UserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Bad json", http.StatusBadRequest)
+		httpx.WriteError(w, http.StatusBadRequest, "Invalid JSON", httpx.ErrorDetails{
+			"err": err.Error(),
+		})
 		return
 	}
 
 	check, err := handler.service.Login(r.Context(), req)
 	if err != nil {
-		log.Println(err)
-		http.Error(w, "Not found", http.StatusNotFound)
+		httpx.WriteError(w, http.StatusNotFound, "Error", httpx.ErrorDetails{
+			"err": err.Error(),
+		})
 		return
 	}
 
 	if !check {
-		w.WriteHeader(http.StatusUnauthorized)
+		httpx.WriteError(w, http.StatusLocked, "Error", httpx.ErrorDetails{
+			"err": "Locked account",
+		})
 		return
 	}
 	w.WriteHeader(http.StatusOK)

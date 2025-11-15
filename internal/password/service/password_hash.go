@@ -58,8 +58,11 @@ func VerifyHashPassword(hashedPassword, inputPassword string) (bool, error) {
 		return false, err
 	}
 	hashedInput := argon2.IDKey([]byte(inputPassword), saltBytes, params.timeParam, params.memKiB, params.threads, 32)
-
-	return base64.RawStdEncoding.EncodeToString(hashedInput) == params.bHash, nil
+	check := base64.RawStdEncoding.EncodeToString(hashedInput) == params.bHash
+	if !check {
+		return !check, errors.New("Wrong")
+	}
+	return check, nil
 }
 
 func generateSalt(n int) ([]byte, error) {

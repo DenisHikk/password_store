@@ -2,6 +2,7 @@ package password
 
 import (
 	"encoding/json"
+	httpx "genpasstore/internal/httpx/handler"
 	password "genpasstore/internal/password/service"
 	"net/http"
 )
@@ -22,7 +23,10 @@ func HandleGeneratePassword(w http.ResponseWriter, r *http.Request) {
 	var req PasswordRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		httpx.WriteError(w, http.StatusBadRequest, "Invalid JSON", httpx.ErrorDetails{
+			"err": err.Error(),
+		})
+		return
 	}
 
 	cfg := password.PasswordConfig{
@@ -35,7 +39,9 @@ func HandleGeneratePassword(w http.ResponseWriter, r *http.Request) {
 
 	pw, err := password.GeneratePassword(cfg)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		httpx.WriteError(w, http.StatusBadRequest, "Invalid parametrs generate passwird", httpx.ErrorDetails{
+			"err": err.Error(),
+		})
 		return
 	}
 

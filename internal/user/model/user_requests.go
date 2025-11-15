@@ -12,9 +12,8 @@ type UserRequest struct {
 }
 
 type UserDTO struct {
-	ID             uuid.UUID
-	Email          string
-	Password       string
-	MasterPassword string
-	DateCreate     time.Time
+	ID         uuid.UUID
+	Email      string
+	Password   string
+	DateCreate time.Time
 }
