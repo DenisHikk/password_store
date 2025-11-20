@@ -3,7 +3,7 @@ package password
 import (
 	"encoding/json"
 	httpx "genpasstore/internal/httpx/handler"
-	password "genpasstore/internal/password/service"
+	password "genpasstore/internal/password/app"
 	"net/http"
 )
 

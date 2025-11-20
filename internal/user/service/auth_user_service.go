@@ -3,16 +3,17 @@ package service
 import (
 	"context"
 	"errors"
-	password "genpasstore/internal/password/service"
+	password "genpasstore/internal/password/app"
+	repository "genpasstore/internal/user/app"
 	"genpasstore/internal/user/model"
 	"log"
 )
 
 type UserService struct {
-	repo Repository
+	repo repository.Repository
 }
 
-func NewUserService(repo Repository) *UserService {
+func NewUserService(repo repository.Repository) *UserService {
 	return &UserService{repo: repo}
 }
 

@@ -2,16 +2,17 @@ package auth
 
 import (
 	"encoding/json"
+	serviceauth "genpasstore/internal/auth/app"
 	httpx "genpasstore/internal/httpx/handler"
 	"genpasstore/internal/user/model"
 	"net/http"
 )
 
 type AuthHandler struct {
-	service AuthService
+	service serviceauth.AuthService
 }
 
-func NewAuthHandler(service AuthService) *AuthHandler {
+func NewAuthHandler(service serviceauth.AuthService) *AuthHandler {
 	return &AuthHandler{service: service}
 }
 
