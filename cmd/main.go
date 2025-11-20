@@ -2,9 +2,9 @@ package main
 
 import (
 	"context"
+	authUser "genpasstore/internal/auth/handler"
 	"genpasstore/internal/db"
 	"genpasstore/internal/httpx/server"
-	authUser "genpasstore/internal/user/handler"
 	userRepository "genpasstore/internal/user/repository"
 	userService "genpasstore/internal/user/service"
 	"log"

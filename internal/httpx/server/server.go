@@ -1,8 +1,8 @@
 package server
 
 import (
+	authUser "genpasstore/internal/auth/handler"
 	password "genpasstore/internal/password/handler"
-	authUser "genpasstore/internal/user/handler"
 	"log"
 	"net/http"
 
