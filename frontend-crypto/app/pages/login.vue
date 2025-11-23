@@ -9,6 +9,7 @@ const tab = ref<'signin' | 'signup'>('signin');
 
 <template>
     <UContainer class="mt-6">
+
         <UCard class="flex justify-center" variant="soft" :ui="{ root: 'border-none' }">
             <div class="text-center mt-6">
                 <p class="text-4xl">Добро пожаловать в CryptoStore</p>
@@ -34,3 +35,8 @@ const tab = ref<'signin' | 'signup'>('signin');
         </UCard>
     </UContainer>
 </template>
+
+
+<style scoped>
+
+</style>

@@ -9,3 +9,8 @@
         </UApp>
     </div>
 </template>
+<style>
+body{
+    padding: 0px!important;
+}
+</style>

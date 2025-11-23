@@ -4,7 +4,6 @@ import vuetify, { transformAssetUrls } from "vite-plugin-vuetify"
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devServer: {
-    host: "0.0.0.0",
     port: 8000
   },
   devtools: { enabled: true },
@@ -19,6 +18,12 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: import.meta.env.NUXT_PUBLIC_API_BASE || 'http://192.168.31.108:8000'
+    }
+  },
+  ui: {
+    icons: {
+      light: 'i-ph-sun',
+      dark: 'i-ph-moon'
     }
   }
 })

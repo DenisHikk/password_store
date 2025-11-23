@@ -4,6 +4,7 @@ defineProps({footer: String})
 
 <template>
     <UFooter bottom>
-        <span>Create by Denis Krivolapov</span>
+        <span>Create by ...</span>
+
     </UFooter>
 </template>

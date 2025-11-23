@@ -1,3 +1,12 @@
+<script setup lang="ts">
+</script>
+
 <template>
-    <h1>Main Page</h1>
+  <UContainer>
+
+      <ServiceList></ServiceList>
+  </UContainer>
 </template>
+<style scoped> 
+
+</style>

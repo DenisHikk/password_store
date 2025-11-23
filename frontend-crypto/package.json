@@ -16,6 +16,7 @@
     "eslint": "^9.38.0",
     "libsodium-wrappers-sumo": "^0.7.15",
     "nuxt": "^4.2.0",
+    "passfather": "^4.1.0",
     "pinia": "^3.0.3",
     "typescript": "^5.9.3",
     "vue": "^3.5.22",
