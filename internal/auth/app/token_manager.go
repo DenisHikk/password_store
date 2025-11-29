@@ -1,7 +1,12 @@
 package auth
 
 import (
+	"context"
 	"errors"
+	context_keys "genpasstore/internal"
+	httpx "genpasstore/internal/httpx/handler"
+	"net/http"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -9,24 +14,31 @@ import (
 
 type TokenManager struct {
 	secret []byte
-	ttl    time.Duration
 }
 
 func NewTokenManager(secret string, ttl time.Duration) *TokenManager {
 	return &TokenManager{
 		secret: []byte(secret),
-		ttl:    ttl,
 	}
 }
 
-func (tokenManger *TokenManager) GenerateToken(userID string) (string, error) {
+func (tokenManager *TokenManager) GenerateAccessToken(userID string, ttl time.Duration) (string, error) {
+	return tokenManager.GenerateToken(userID, "access", ttl)
+}
+
+func (tokenManager *TokenManager) GenerateRefreshToken(userID string, ttl time.Duration) (string, error) {
+	return tokenManager.GenerateToken(userID, "refresh", ttl)
+}
+
+func (tokenManger *TokenManager) GenerateToken(userID, typeToken string, ttl time.Duration) (string, error) {
 	now := time.Now()
-	exp := now.Add(tokenManger.ttl)
+	exp := now.Add(ttl)
 
 	claims := jwt.MapClaims{
-		"now": now.Unix(),
-		"exp": exp.Unix(),
-		"sub": userID,
+		"iat":  now.Unix(),
+		"exp":  exp.Unix(),
+		"sub":  userID,
+		"type": typeToken,
 	}
 
 	keyWithClaims := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -64,4 +76,29 @@ func (tokenManager *TokenManager) ValidateToken(tokenStr string) (string, error)
 		return "", errors.New("sub is empty")
 	}
 	return sub, nil
+}
+
+func (tokenManager *TokenManager) MiddlewareJWTToken(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		if !strings.HasPrefix(auth, "Bearer") {
+			httpx.WriteError(w, http.StatusUnauthorized, "Invalid header request", httpx.ErrorDetails{
+				"err": errors.New("invalid header for authorization, check documentation"),
+			})
+			return
+		}
+		tokenStr := strings.TrimPrefix(auth, "Bearer")
+		tokenStr = strings.TrimSpace(tokenStr)
+
+		userId, err := tokenManager.ValidateToken(tokenStr)
+		if err != nil {
+			httpx.WriteError(w, http.StatusUnauthorized, "Invalid token", httpx.ErrorDetails{
+				"err": "Invalid access token. Mb need refresh?",
+			})
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), context_keys.UserIDKey, userId)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
 }

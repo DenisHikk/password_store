@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	auth "genpasstore/internal/auth/app"
 	authUser "genpasstore/internal/auth/handler"
 	"genpasstore/internal/db"
 	"genpasstore/internal/httpx/server"
@@ -66,14 +67,17 @@ func realMain() error {
 		return err
 	}
 	defer pool.Close()
+	accessToken := auth.NewTokenManager(os.Getenv("SECRET_JWT"), 15*time.Minute)
 
 	userRepo := userRepository.NewUserRepository(pool)
 	userService := userService.NewUserService(userRepo)
-	authHandler := authUser.NewAuthHandler(userService)
+	authHandler := authUser.NewAuthHandler(userService, accessToken)
 
+	// TODO: Add access token time to config file
 	log.Println("Starting server...")
 	srv := server.NewHTTPServer(server.Deps{
-		AuthHandler: authHandler,
+		AuthHandler:  authHandler,
+		TokenManager: accessToken,
 	})
 
 	log.Printf("Server start and listen in 0.0.0.0:8000")

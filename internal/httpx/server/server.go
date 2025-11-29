@@ -1,6 +1,7 @@
 package server
 
 import (
+	auth "genpasstore/internal/auth/app"
 	authUser "genpasstore/internal/auth/handler"
 	password "genpasstore/internal/password/handler"
 	"log"
@@ -11,7 +12,8 @@ import (
 )
 
 type Deps struct {
-	AuthHandler *authUser.AuthHandler
+	AuthHandler  *authUser.AuthHandler
+	TokenManager *auth.TokenManager
 }
 
 func NewHTTPServer(deps Deps) *chi.Mux {
@@ -23,13 +25,20 @@ func NewHTTPServer(deps Deps) *chi.Mux {
 	})
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Route("/password", func(r chi.Router) {
-			r.Post("/generate", password.HandleGeneratePassword)
-		})
 		r.Route("/auth", func(r chi.Router) {
-			r.Post("/registry", deps.AuthHandler.HandleRegistry)
+			r.Post("/register", deps.AuthHandler.HandleRegistry)
 			r.Post("/login", deps.AuthHandler.HandleLogin)
 		})
+		r.Group(func(r chi.Router) {
+			r.Use(deps.TokenManager.MiddlewareJWTToken)
+			r.Post("/refresh", func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte("{\"TODO\": \"done in future\"}"))
+			})
+			r.Route("/utils", func(r chi.Router) {
+				r.Post("/password-generator", password.HandleGeneratePassword)
+			})
+		})
+
 	})
 
 	log.Println("Done registry handler")
