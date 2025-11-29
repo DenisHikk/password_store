@@ -11,7 +11,7 @@ import (
 func TestTokenManager_GenerateToken(t *testing.T) {
 	secret := os.Getenv("SECRET_JWT")
 	tm := NewTokenManager(secret, time.Minute)
-	jwt, err := tm.GenerateToken(uuid.NewString())
+	jwt, err := tm.GenerateAccessToken(uuid.NewString())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -25,7 +25,7 @@ func TestTokenManager_ValidateToken(t *testing.T) {
 	secret := os.Getenv("SECRET_JWT")
 	userId := uuid.NewString()
 	tm := NewTokenManager(secret, time.Minute)
-	jwt, err := tm.GenerateToken("userId", 15*time.Minute)
+	jwt, err := tm.GenerateAccessToken("userId", 15*time.Minute)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
