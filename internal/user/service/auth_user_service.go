@@ -17,37 +17,38 @@ func NewUserService(repo repository.Repository) *UserService {
 	return &UserService{repo: repo}
 }
 
-func (service *UserService) Register(ctx context.Context, user model.UserRequest) error {
-	if exists, _ := service.repo.ExistsByEmail(ctx, user.Email); exists {
-		return errors.New("email already exists")
-	}
+func (service *UserService) Register(ctx context.Context, user model.UserRequest) (*model.UserDTO, error) {
 	hashPassword, err := password.EncodeHashPassword(user.Password)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	err = service.repo.CreateUser(ctx, user.Email, hashPassword)
+	userDTO, err := service.repo.CreateUser(ctx, user.Email, hashPassword)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &userDTO, nil
 }
 
-func (service *UserService) Login(ctx context.Context, userReq model.UserRequest) (bool, error) {
+func (service *UserService) Login(ctx context.Context, userReq model.UserRequest) (string, error) {
 	if exists, _ := service.repo.ExistsByEmail(ctx, userReq.Email); !exists {
-		return false, errors.New("no user with this email was found")
+		return "", errors.New("no user with this email was found")
 	}
 	user, err := service.repo.GetUserByEmail(ctx, userReq.Email)
 	if err != nil {
 		log.Println("Error while request user from DB")
-		return false, err
+		return "", err
 	}
 
-	check, err := password.VerifyHashPassword(user.Password, userReq.Password)
+	isSimilar, err := password.VerifyHashPassword(user.Password, userReq.Password)
 	if err != nil {
-		return false, errors.New("Wrong")
+		return "", errors.New("Wrong")
 	}
 
-	return check, nil
+	if !isSimilar {
+		return "", errors.New("Wrong")
+	}
+
+	return user.ID.String(), nil
 }

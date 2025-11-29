@@ -25,7 +25,7 @@ func TestTokenManager_ValidateToken(t *testing.T) {
 	secret := os.Getenv("SECRET_JWT")
 	userId := uuid.NewString()
 	tm := NewTokenManager(secret, time.Minute)
-	jwt, err := tm.GenerateToken(userId)
+	jwt, err := tm.GenerateToken("userId", 15*time.Minute)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

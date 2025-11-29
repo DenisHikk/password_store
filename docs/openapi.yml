@@ -152,7 +152,10 @@ components:
           description: Время жизни access token в секундах
         refresh_token:
           type: string
-      required: [access_token, token_type, expires_in, refresh_token]
+        expires_in_refresh:
+          type: integer
+          description: Время жизни refresh token в секундах
+      required: [access_token, token_type, expires_in, refresh_token, expires_in_refresh]
 
     TokenRefreshRequest:
       type: object

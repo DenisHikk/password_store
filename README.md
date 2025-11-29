@@ -21,32 +21,6 @@ Simple web UI built with static assets
 
 Docker-based deployment
 
-## Project Structure
-
-```[]
-password_store/
-│
-├── main.go                # Entry point of the application
-├── db/db.go               # Database connection and queries
-├── dto/user_dto.go        # User data transfer objects
-├── handler/               # HTTP route handlers
-│   ├── handler_password.go
-│   └── handle_registry.go
-├── password/              # Password utilities
-│   ├── password_generate.go
-│   └── password_hash.go
-├── web/                   # Frontend assets (HTML, JS, CSS) build from frontend-crypto
-│   ├── index.html
-│   ├── favicon.ico
-│   └── assets/
-├── init.sql               # Database initialization script
-├── Dockerfile             # Docker build configuration
-├── docker-compose.yml     # Multi-container setup
-├── .env                   # Environment variables
-├── go.mod / go.sum        # Go dependencies
-└── README.md
-```
-
 ## Setup and Run
 
 - Prerequisites
@@ -58,8 +32,19 @@ password_store/
 
 `docker-compose up --build`
 
-The service will start on <http://localhost:8080> (default port) or <http://your_ip_adress:8080>
+The service will start on <http://localhost:8000> (default port) or <http://your_ip_adress:8000>
 Configuration variables are defined in the .env file.
+
+.env file look like 
+
+```
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=password_manager
+POSTGRES_PORT=5432
+POSTGRES_HOST=localhost
+SECRET_JWT=very_secret_token
+```
 
 Ensure your database is configured as expected in init.sql.
 
